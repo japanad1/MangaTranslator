@@ -266,31 +266,51 @@ export const MangaCanvas: React.FC<MangaCanvasProps> = ({
           prev.map((z) => (z.id === zone.id ? { ...z, translatedText: "...", originalText: "..." } : z))
         );
 
-        const response = await fetch("/api/translate-zone", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: croppedBase64,
-            sourceLang: "Auto",
-            targetLang,
-            translationStyle,
-            userApiKey
-          })
-        });
+        try {
+          const response = await fetch("/api/translate-zone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: croppedBase64,
+              sourceLang: "Auto",
+              targetLang,
+              translationStyle,
+              userApiKey
+            })
+          });
 
-        const data = await response.json();
-        if (data.originalText || data.translatedText) {
+          const responseText = await response.text();
+          let data: any = null;
+          try {
+            data = JSON.parse(responseText);
+          } catch (jsonErr) {
+            console.error("Vercel returned non-JSON response:", responseText);
+            const cleanText = responseText.replace(/<[^>]*>/g, "").trim(); // strip HTML tags
+            const snippet = cleanText.length > 200 ? cleanText.substring(0, 200) + "..." : cleanText;
+            throw new Error(`Lời gọi API thất bại (Mã HTTP ${response.status}): ${snippet || "Lỗi nén/Xử lý"}.\n\nKhuyên dùng: Dán API Key cá nhân của bạn bên Sidebar để truy xuất tối hậu không thông qua server.`);
+          }
+
+          if (data.originalText || data.translatedText) {
+            setZones((prev) =>
+              prev.map((z) =>
+                z.id === zone.id
+                  ? {
+                      ...z,
+                      originalText: data.originalText || "",
+                      translatedText: data.translatedText || "Dịch thất bại..."
+                    }
+                  : z
+              )
+            );
+          }
+        } catch (fetchErr: any) {
+          console.error("Manual zone translate fail:", fetchErr);
           setZones((prev) =>
             prev.map((z) =>
-              z.id === zone.id
-                ? {
-                    ...z,
-                    originalText: data.originalText || "",
-                    translatedText: data.translatedText || "Dịch thất bại..."
-                  }
-                : z
+              z.id === zone.id ? { ...z, originalText: "Error", translatedText: "Dịch lỗi..." } : z
             )
           );
+          alert("Lỗi kết nối máy chủ dịch thuật: " + fetchErr.message);
         }
       };
     } catch (err) {

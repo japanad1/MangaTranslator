@@ -376,10 +376,20 @@ export default function App() {
           if (timer1) clearTimeout(timer1);
           if (timer2) clearTimeout(timer2);
 
-          const data = await response.json();
+          // Robust parsing to catch non-JSON Vercel error pages (e.g. 504 Gateway Timeout)
+          const responseText = await response.text();
+          let data: any = null;
+          try {
+            data = JSON.parse(responseText);
+          } catch (jsonErr) {
+            console.error("Vercel returned non-JSON response:", responseText);
+            const cleanText = responseText.replace(/<[^>]*>/g, "").trim(); // strip HTML tags
+            const snippet = cleanText.length > 200 ? cleanText.substring(0, 200) + "..." : cleanText;
+            throw new Error(`Máy chủ Vercel phản hồi lỗi (Mã ${response.status}): ${snippet || "Timeout/Lỗi xử lý hình ảnh"}.\n\nKhuyên dùng: Cấu hình Gemini API Key cá nhân bên Sidebar Trái.`);
+          }
 
           // Handle 429 Quota Rate Limit specifically
-          if (response.status === 429 || (data && data.code === 429) || (data.error && data.error.includes("429"))) {
+          if (response.status === 429 || (data && data.code === 429) || (data && data.error && data.error.includes("429"))) {
             retriesLeft--;
             if (retriesLeft <= 0) {
               setPages((prev) =>

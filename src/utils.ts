@@ -195,3 +195,55 @@ export async function exportMangaAsImage(
     alert("Export failed. Please try again.");
   }
 }
+
+// Compress and scale high-resolution manga image to optimal dimensions to fit Vercel body limits
+export function compressMangaImage(base64Str: string, maxDim: number = 1000): Promise<string> {
+  return new Promise((resolve) => {
+    // If not a base64 image or too short, return as-is
+    if (!base64Str || !base64Str.startsWith("data:image")) {
+      resolve(base64Str);
+      return;
+    }
+
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      // If the image is already small, we still convert to JPEG to reduce base64 size (since JPEG encodes much smaller than PNG)
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+      }
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(base64Str);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      // Use jpeg format with 0.82 quality to shrink file size from MBs down to ~120KB - 250KB
+      const compressed = canvas.toDataURL("image/jpeg", 0.82);
+      console.log(`[Image Compress] Original: ${Math.round(base64Str.length / 1024)}KB, Compressed: ${Math.round(compressed.length / 1024)}KB`);
+      resolve(compressed);
+    };
+    img.onerror = () => {
+      resolve(base64Str);
+    };
+  });
+}
+

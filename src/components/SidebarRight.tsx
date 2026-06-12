@@ -81,7 +81,17 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
         })
       });
       
-      const resData = await response.json();
+      const responseText = await response.text();
+      let resData: any = null;
+      try {
+        resData = JSON.parse(responseText);
+      } catch (jsonErr) {
+        console.error("Vercel returned non-JSON response:", responseText);
+        const cleanText = responseText.replace(/<[^>]*>/g, "").trim(); // strip HTML tags
+        const snippet = cleanText.length > 200 ? cleanText.substring(0, 200) + "..." : cleanText;
+        throw new Error(`Máy chủ Vercel phản hồi lỗi (Mã ${response.status}): ${snippet || "Timeout/Lỗi xử lý"}. Khuyên dùng: Thử lại hoặc dùng API Key cá nhân.`);
+      }
+
       if (resData.translatedText) {
         updateField("translatedText", resData.translatedText);
       }

@@ -18,7 +18,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { TranslationZone, LANGUAGES, MangaPage } from "../types";
-import { exportMangaAsImage } from "../utils";
+import { exportMangaAsImage, compressMangaImage } from "../utils";
 
 interface SidebarLeftProps {
   image: string | null;
@@ -94,10 +94,13 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
       
       const promise = new Promise<{ name: string; image: string }>((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
+          const rawBase64 = e.target?.result as string;
+          // Compress immediately on client-side to fit within Vercel's 4.5MB payload limit
+          const compressed = await compressMangaImage(rawBase64, 1100);
           resolve({
             name: file.name,
-            image: e.target?.result as string
+            image: compressed
           });
         };
         reader.readAsDataURL(file);
@@ -196,10 +199,23 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
         if (stepTimer1) clearTimeout(stepTimer1);
         if (stepTimer2) clearTimeout(stepTimer2);
 
-        const data = await response.json();
+        // Robust parsing to catch non-JSON Vercel error pages (e.g. 504 Gateway Timeout, 413 Payload Too Large)
+        const responseText = await response.text();
+        let data: any = null;
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonErr) {
+          console.error("Vercel returned non-JSON response:", responseText);
+          const cleanText = responseText.replace(/<[^>]*>/g, "").trim(); // strip HTML tags
+          const snippet = cleanText.length > 250 ? cleanText.substring(0, 250) + "..." : cleanText;
+          throw new Error(
+            `Máy chủ Vercel phản hồi lỗi (Mã ${response.status}): ${snippet || "Timeout/Lỗi xử lý hình ảnh"}.\n\n` +
+            `Lời khuyên: Để khắc phục triệt để giới hạn 10s của Vercel bên thứ ba, bạn vui lòng dán "Khóa API cá nhân" của riêng mình trong thanh Sidebar để truyền trực tiếp từ trình duyệt.`
+          );
+        }
         
         // Handle 429 Quota Rate Limit specifically
-        if (response.status === 429 || (data && data.code === 429) || (data.error && data.error.includes("429"))) {
+        if (response.status === 429 || (data && data.code === 429) || (data && data.error && data.error.includes("429"))) {
           retriesLeft--;
           if (retriesLeft <= 0) {
             alert("Đầy hạn mức dịch thử miễn phí của Gemini API cho ngày hôm nay. Hãy thử lại sau vài phút hoặc tự vẽ và dịch bằng tay.");
