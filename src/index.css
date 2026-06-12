@@ -1,0 +1,21 @@
+@import url("https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Bangers&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-comic: "Comic Neue", cursive, sans-serif;
+  --font-bangers: "Bangers", cursive, sans-serif;
+  --font-architect: "Architects Daughter", cursive, sans-serif;
+}
+
+/* Custom styles for canvas and selections */
+.manga-workspace-bg {
+  background-color: #0c0f16;
+  background-image: radial-gradient(#1e293b 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}

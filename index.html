@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      // Defensive error handling for window.fetch assignment which might be triggered by external extensions, sandbox frames or local dev server wrappers
+      window.addEventListener('error', function(event) {
+        if (event.message && (event.message.includes("Cannot set property fetch") || event.message.includes("fetch of #<Window>"))) {
+          event.preventDefault();
+          console.warn("Prevented non-critical window.fetch overriding/interception error from breaking current context.");
+        }
+      });
+
+      // Defensive custom property descriptor for window.fetch to allow overriding/setting from sandbox wrappers or testing scripts
+      (function() {
+        try {
+          var realFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return realFetch;
+            },
+            set: function(val) {
+              realFetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {
+          console.warn("Could not redefine window.fetch property descriptor: ", e);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
