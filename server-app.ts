@@ -80,16 +80,18 @@ const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Initialize Gemini client with standard telemetry User-Agent
-const apiKey = process.env.GEMINI_API_KEY;
-const ai = new GoogleGenAI({
-  apiKey: apiKey || "MOCK_KEY",
-  httpOptions: {
-    headers: {
-      "User-Agent": "aistudio-build",
+// Initialize Gemini client helper with standard telemetry User-Agent
+function getGenAIClient(customKey?: string) {
+  const finalKey = customKey || process.env.GEMINI_API_KEY || "";
+  return new GoogleGenAI({
+    apiKey: finalKey,
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
+      },
     },
-  },
-});
+  });
+}
 
 // API endpoint for health check
 app.get("/api/health", (req, res) => {
@@ -99,17 +101,22 @@ app.get("/api/health", (req, res) => {
 // API endpoint for full-page OCR translation (automatic detection)
 app.post("/api/ocr-translate", async (req, res) => {
   try {
-    const { image, sourceLang = "Auto", targetLang = "Vietnamese", translationStyle = "Casual" } = req.body;
+    const { image, sourceLang = "Auto", targetLang = "Vietnamese", translationStyle = "Casual", userApiKey } = req.body;
 
     if (!image) {
       return res.status(400).json({ error: "No image payload provided" });
     }
 
-    if (!apiKey) {
-      return res.status(500).json({ 
-        error: "GEMINI_API_KEY is not configured. Please set your key." 
+    const headerKey = req.headers["x-gemini-key"] as string;
+    const activeApiKey = headerKey || userApiKey || process.env.GEMINI_API_KEY;
+
+    if (!activeApiKey) {
+      return res.status(401).json({ 
+        error: "GEMINI_API_KEY chưa được cấu hình. Vui lòng nhập API Key của bạn (Cài Đặt Dịch Thuật bên Sidebar Trái) để tiếp tục dịch." 
       });
     }
+
+    const ai = getGenAIClient(activeApiKey);
 
     // Extract base64 header if it exists
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
@@ -197,13 +204,18 @@ Style guides:
 // API endpoint to translate a manually drawn crop zone
 app.post("/api/translate-zone", async (req, res) => {
   try {
-    const { image, text, sourceLang = "Auto", targetLang = "Vietnamese", translationStyle = "Casual" } = req.body;
+    const { image, text, sourceLang = "Auto", targetLang = "Vietnamese", translationStyle = "Casual", userApiKey } = req.body;
 
-    if (!apiKey) {
-      return res.status(500).json({ 
-        error: "GEMINI_API_KEY is not configured. Please set your key." 
+    const headerKey = req.headers["x-gemini-key"] as string;
+    const activeApiKey = headerKey || userApiKey || process.env.GEMINI_API_KEY;
+
+    if (!activeApiKey) {
+      return res.status(401).json({ 
+        error: "GEMINI_API_KEY chưa được cấu hình. Vui lòng nhập API Key của bạn (Cài Đặt Dịch Thuật bên Sidebar Trái) để tiếp tục dịch." 
       });
     }
+
+    const ai = getGenAIClient(activeApiKey);
 
     // If text is provided, translate directly without running multimodal OCR on image
     if (text) {

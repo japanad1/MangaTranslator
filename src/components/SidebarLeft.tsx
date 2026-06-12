@@ -11,7 +11,11 @@ import {
   Loader2,
   Plus,
   Layers,
-  FileCheck2
+  FileCheck2,
+  Key,
+  Eye,
+  EyeOff,
+  ExternalLink
 } from "lucide-react";
 import { TranslationZone, LANGUAGES, MangaPage } from "../types";
 import { exportMangaAsImage } from "../utils";
@@ -29,6 +33,8 @@ interface SidebarLeftProps {
   setTargetLang: (lang: string) => void;
   translationStyle: string;
   setTranslationStyle: (style: string) => void;
+  userApiKey: string;
+  setUserApiKey: (key: string) => void;
   isTranslating: boolean;
   setIsTranslating: (val: boolean) => void;
   loadSample: () => void;
@@ -57,6 +63,8 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   setTargetLang,
   translationStyle,
   setTranslationStyle,
+  userApiKey,
+  setUserApiKey,
   isTranslating,
   setIsTranslating,
   loadSample,
@@ -73,6 +81,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const [ocrStep, setOcrStep] = useState<string>("");
   const [isExportingAll, setIsExportingAll] = useState(false);
 
@@ -179,7 +188,8 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
             image,
             sourceLang,
             targetLang,
-            translationStyle
+            translationStyle,
+            userApiKey
           })
         });
 
@@ -523,6 +533,45 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
               <option value="Cute">Cute (Mềm mại, Dễ thương)</option>
               <option value="Formal">Formal (Trang trọng, Cổ kính)</option>
             </select>
+          </div>
+
+          {/* Cấu hình Gemini API Key */}
+          <div className="pt-2 border-t border-slate-150/60 mt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Khóa API Cá Nhân (Tùy Chọn)</span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${userApiKey ? "bg-emerald-50 text-emerald-600" : "bg-indigo-50/60 text-indigo-500"}`}>
+                {userApiKey ? "Đang Dùng Key Cá Nhân" : "Đang Dùng Key Hệ Thống"}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type={showKey ? "text" : "password"}
+                placeholder="Dán Gemini API Key (AIzaSy...) tại đây"
+                value={userApiKey}
+                onChange={(e) => setUserApiKey(e.target.value.trim())}
+                className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg py-1.5 pl-7 pr-8 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none placeholder-slate-400 font-mono"
+              />
+              <Key className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-2 top-2 w-4 h-4 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                title={showKey ? "Ẩn" : "Hiện"}
+              >
+                {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              * Rất hữu dụng khi deploy lên Vercel bị hết hạn mức (429/Rate limit).{" "}
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-indigo-500 hover:underline inline-flex items-center gap-0.5 font-semibold"
+              >
+                Lấy Key miễn phí <ExternalLink className="w-2.5 h-2.5 inline" />
+              </a>
+            </p>
           </div>
         </div>
 

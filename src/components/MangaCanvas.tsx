@@ -29,6 +29,7 @@ interface MangaCanvasProps {
   ocrStep?: string;
   targetLang: string;
   translationStyle: string;
+  userApiKey: string;
   hoveredZoneId: string | null;
 }
 
@@ -45,6 +46,7 @@ export const MangaCanvas: React.FC<MangaCanvasProps> = ({
   ocrStep = "",
   targetLang,
   translationStyle,
+  userApiKey,
   hoveredZoneId
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -271,7 +273,8 @@ export const MangaCanvas: React.FC<MangaCanvasProps> = ({
             image: croppedBase64,
             sourceLang: "Auto",
             targetLang,
-            translationStyle
+            translationStyle,
+            userApiKey
           })
         });
 

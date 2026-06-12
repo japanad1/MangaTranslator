@@ -138,6 +138,13 @@ export default function App() {
   const [sourceLang, setSourceLang] = useState<string>("Auto");
   const [targetLang, setTargetLang] = useState<string>("Vietnamese");
   const [translationStyle, setTranslationStyle] = useState<string>("Casual");
+  const [userApiKey, setUserApiKey] = useState<string>(() => {
+    return localStorage.getItem("user_gemini_api_key") || "";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("user_gemini_api_key", userApiKey);
+  }, [userApiKey]);
 
   // Derive active page states
   const currentPage = pages.find((p) => p.id === currentPageId) || null;
@@ -361,7 +368,8 @@ export default function App() {
               image: page.image,
               sourceLang,
               targetLang,
-              translationStyle
+              translationStyle,
+              userApiKey
             })
           });
 
@@ -529,6 +537,8 @@ export default function App() {
           setTargetLang={setTargetLang}
           translationStyle={translationStyle}
           setTranslationStyle={setTranslationStyle}
+          userApiKey={userApiKey}
+          setUserApiKey={setUserApiKey}
           isTranslating={isTranslating}
           setIsTranslating={setIsTranslating}
           loadSample={loadSamplePage}
@@ -558,6 +568,7 @@ export default function App() {
           ocrStep={currentPage?.ocrStep || ""}
           targetLang={targetLang}
           translationStyle={translationStyle}
+          userApiKey={userApiKey}
           hoveredZoneId={hoveredZoneId}
         />
 
@@ -569,6 +580,7 @@ export default function App() {
           onDuplicateZone={handleDuplicateZone}
           targetLang={targetLang}
           translationStyle={translationStyle}
+          userApiKey={userApiKey}
         />
       </div>
     </div>

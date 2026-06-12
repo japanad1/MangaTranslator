@@ -23,6 +23,7 @@ interface SidebarRightProps {
   onDuplicateZone: (zone: TranslationZone) => void;
   targetLang: string;
   translationStyle: string;
+  userApiKey: string;
 }
 
 export const SidebarRight: React.FC<SidebarRightProps> = ({
@@ -31,7 +32,8 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
   onDeleteZone,
   onDuplicateZone,
   targetLang,
-  translationStyle
+  translationStyle,
+  userApiKey
 }) => {
   const [isTranslatingLocal, setIsTranslatingLocal] = useState(false);
 
@@ -74,7 +76,8 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
           text: selectedZone.originalText,
           sourceLang: "Auto",
           targetLang,
-          translationStyle
+          translationStyle,
+          userApiKey
         })
       });
       
